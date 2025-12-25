@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Buy = () => {
   const [properties, setProperties] = useState([]);
   const navigate = useNavigate();
@@ -51,7 +53,7 @@ const Buy = () => {
       if (price === "high") query.append("minPrice", 8000000);
 
       const res = await axios.get(
-        `http://localhost:8000/api/properties?${query.toString()}`
+        `${BACKEND_URL}/api/properties?${query.toString()}`
       );
 
       setProperties(res.data || []);
@@ -373,7 +375,6 @@ const Buy = () => {
           </h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
             {properties.map((p) => {
-              const BACKEND_URL = "http://localhost:8000";
               const images = Array.isArray(p.images)
                 ? p.images.map((img) =>
                     img.startsWith("http") ? img : `${BACKEND_URL}${img}`
