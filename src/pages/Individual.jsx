@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = "http://${import.meta.env.VITE_API_BASE_URL}";
+import API from "../utils/axios"; // Use your axios instance
 
 const Individual = () => {
   const { id } = useParams();
@@ -19,9 +17,7 @@ const Individual = () => {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const res = await axios.get(
-          `${BACKEND_URL}/api/properties/${id}`
-        );
+        const res = await API.get(`/properties/${id}`);
         setProperty(res.data);
       } catch (err) {
         console.error(err);
@@ -50,6 +46,7 @@ const Individual = () => {
   }
 
   // ================= IMAGES FIX =================
+  const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
   const images = Array.isArray(property.images)
     ? property.images.map((img) =>
         img.startsWith("http") ? img : `${BACKEND_URL}${img}`
