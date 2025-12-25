@@ -1,6 +1,6 @@
 // src/pages/RecHouse.jsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../utils/axios"; // Use your axios instance!
 import { useNavigate, useLocation } from "react-router-dom";
 
 const RecHouse = () => {
@@ -19,7 +19,7 @@ const RecHouse = () => {
 
   const fetchSearchedProperties = async () => {
     try {
-      const res = await axios.get("http://${import.meta.env.VITE_API_BASE_URL}/api/properties");
+      const res = await API.get("/properties");
       let results = res.data || [];
 
       const q = searchQuery.toLowerCase().trim();
