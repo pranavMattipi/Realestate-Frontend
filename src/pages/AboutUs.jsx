@@ -1,7 +1,16 @@
 // src/pages/AboutUs.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const AboutUs = () => {
+  const navigate = useNavigate();
+
+  /* ================= AUTH CHECK (MATCHES Home.jsx) ================= */
+  const handleBrowseProperties = () => {
+    const token = localStorage.getItem("token");
+    token ? navigate("/properties") : navigate("/login");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-16">
 
@@ -10,9 +19,11 @@ const AboutUs = () => {
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
           About <span className="text-blue-600">EstatePro</span>
         </h1>
-        <p className="text-gray-600 text-lg mt-4 max-w-2xl mx-auto">
-          Your trusted partner in finding your dream home, renting with ease,
-          and selling with confidence.
+        <p className="text-gray-600 text-lg mt-4 max-w-3xl mx-auto">
+          EstatePro is your trusted digital real estate partner, helping buyers,
+          renters, and property owners connect effortlessly. Our goal is to
+          simplify the entire property journey through smart technology,
+          verified data, and intuitive design.
         </p>
       </div>
 
@@ -31,15 +42,45 @@ const AboutUs = () => {
           <p className="text-gray-700 leading-relaxed text-lg">
             EstatePro is a modern real estate platform built with one mission:
             to make buying, renting, and selling properties smoother, faster,
-            and more transparent. We combine technology, design, and data to
-            give users a seamless experience.
+            and more transparent.
           </p>
 
           <p className="text-gray-700 leading-relaxed text-lg mt-4">
-            Whether you're searching for a luxury home, an affordable rental, or
-            planning to list your property for sale, our platform ensures that
-            every step feels effortless.
+            From first-time home buyers to seasoned investors, we support users
+            at every stage by providing reliable listings, powerful search
+            tools, and direct communication with property owners.
           </p>
+        </div>
+      </div>
+
+      {/* ================== VISION & MISSION ================== */}
+      <div className="mb-20">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">
+          Our Vision & Mission
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="bg-white p-8 rounded-2xl shadow border">
+            <h3 className="text-xl font-semibold text-blue-600 mb-3">
+              Our Vision
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              To become the most trusted and user-friendly real estate platform,
+              empowering people to make confident property decisions through
+              transparency, innovation, and simplicity.
+            </p>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl shadow border">
+            <h3 className="text-xl font-semibold text-blue-600 mb-3">
+              Our Mission
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              To connect buyers, renters, and sellers directly, eliminate
+              unnecessary middlemen, and provide a seamless digital experience
+              that saves time, effort, and money.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -55,8 +96,8 @@ const AboutUs = () => {
               🔍 Verified Listings
             </h3>
             <p className="text-gray-700">
-              Every property is screened and verified to ensure accuracy,
-              transparency, and trust.
+              Every property is carefully screened to ensure accuracy,
+              authenticity, and trust.
             </p>
           </div>
 
@@ -65,8 +106,8 @@ const AboutUs = () => {
               ⚡ Smart Filters
             </h3>
             <p className="text-gray-700">
-              Easily find the perfect property with advanced search and
-              filter options tailored to your needs.
+              Advanced filters help you quickly narrow down properties based on
+              location, price, type, and preferences.
             </p>
           </div>
 
@@ -75,11 +116,25 @@ const AboutUs = () => {
               📞 Direct Owner Contact
             </h3>
             <p className="text-gray-700">
-              No middlemen. Connect directly with property owners or agents for
-              faster decisions.
+              No brokers in between — communicate directly with owners for
+              faster and more transparent decisions.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ================== HOW IT HELPS ================== */}
+      <div className="mb-20 text-center max-w-4xl mx-auto">
+        <h2 className="text-3xl font-bold text-gray-900 mb-6">
+          How EstatePro Helps You
+        </h2>
+        <p className="text-gray-700 text-lg leading-relaxed">
+          EstatePro brings together technology and real estate expertise to
+          deliver a platform that is simple to use, reliable, and efficient.
+          Whether you are browsing properties, managing your listings, or
+          connecting with owners, every feature is designed to save time and
+          build confidence.
+        </p>
       </div>
 
       {/* ================== FINAL CTA ================== */}
@@ -88,15 +143,15 @@ const AboutUs = () => {
           Ready to find your dream home?
         </h2>
         <p className="text-gray-700 text-lg mt-3">
-          Explore thousands of property listings curated just for you.
+          Explore thousands of verified property listings across top cities.
         </p>
 
-        <a
-          href="/properties"
-          className="inline-block mt-6 px-8 py-3 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700"
+        <button
+          onClick={handleBrowseProperties}
+          className="inline-block mt-6 px-8 py-3 bg-blue-600 text-white text-lg rounded-xl shadow hover:bg-blue-700 transition"
         >
           Browse Properties
-        </a>
+        </button>
       </div>
 
     </div>

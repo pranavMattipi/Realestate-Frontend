@@ -14,9 +14,11 @@ const Buy = () => {
   const [propertyAge, setPropertyAge] = useState("");
   const [parking, setParking] = useState("");
   const [area, setArea] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchFilteredProperties();
+    // eslint-disable-next-line
   }, [
     city,
     price,
@@ -34,8 +36,8 @@ const Buy = () => {
       query.append("type", "sale");
 
       if (city) query.append("city", city);
-      if (bedrooms) query.append("bedrooms", bedrooms);
-      if (bathrooms) query.append("bathrooms", bathrooms);
+      if (bedrooms !== "") query.append("bedrooms", bedrooms);
+      if (bathrooms !== "") query.append("bathrooms", bathrooms);
       if (furnishing) query.append("furnishing", furnishing);
       if (propertyAge) query.append("propertyAge", propertyAge);
       if (parking) query.append("parking", parking);
@@ -52,9 +54,9 @@ const Buy = () => {
         `http://localhost:8000/api/properties?${query.toString()}`
       );
 
-      setProperties(res.data);
+      setProperties(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching properties", err);
     }
   };
 
@@ -67,16 +69,181 @@ const Buy = () => {
     setPropertyAge("");
     setParking("");
     setArea("");
+    fetchFilteredProperties();
+  };
+
+  const getCartKey = () => {
+    const email =
+      localStorage.getItem("userEmail") ||
+      localStorage.getItem("userName") ||
+      "guest";
+    return `cart_${email}`;
+  };
+
+  const addToCart = (property, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+      const key = getCartKey();
+      const cart = JSON.parse(localStorage.getItem(key) || "[]");
+      if (cart.some((item) => item._id === property._id)) {
+        alert("Property already in cart");
+        return;
+      }
+      cart.push(property);
+      localStorage.setItem(key, JSON.stringify(cart));
+      alert("Added to cart");
+    } catch (err) {
+      console.error("Add to cart failed", err);
+      alert("Could not add to cart");
+    }
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold mb-10 text-gray-800">
-        Buy Your Dream <span className="text-blue-600">Home</span>
-      </h1>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      {/* MOBILE FILTER BUTTON */}
+      <div className="flex justify-end md:hidden mb-4">
+        <button
+          onClick={() => setShowFilters(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow"
+        >
+          Filters
+        </button>
+      </div>
 
       <div className="flex gap-10">
-        <div className="w-72 bg-white shadow-lg p-6 rounded-xl h-max sticky top-5">
+        {/* MOBILE FILTER DRAWER */}
+        {showFilters && (
+          <>
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden"
+              onClick={() => setShowFilters(false)}
+            />
+            <aside
+              className="fixed top-0 right-0 w-80 max-w-full h-full bg-white shadow-lg z-50 p-6 overflow-y-auto transition-transform duration-300 md:hidden"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-lg">Filters</h2>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-500 text-2xl"
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+              </div>
+              {/* Filter Controls */}
+              <label className="block text-sm text-gray-600">City</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Mumbai">Mumbai</option>
+                <option value="Chennai">Chennai</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Price Range</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="low">Below ₹30L</option>
+                <option value="mid">₹30L - ₹80L</option>
+                <option value="high">Above ₹80L</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Bedrooms</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="1">1 BHK</option>
+                <option value="2">2 BHK</option>
+                <option value="3">3 BHK</option>
+                <option value="4">4 BHK</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Bathrooms</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={bathrooms}
+                onChange={(e) => setBathrooms(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="1">1 Bathroom</option>
+                <option value="2">2 Bathrooms</option>
+                <option value="3">3 Bathrooms</option>
+                <option value="4">4 Bathrooms</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Furnishing</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={furnishing}
+                onChange={(e) => setFurnishing(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="furnished">Furnished</option>
+                <option value="semi-furnished">Semi-Furnished</option>
+                <option value="unfurnished">Unfurnished</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Property Age</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={propertyAge}
+                onChange={(e) => setPropertyAge(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="0-1 Years">0-1 Years</option>
+                <option value="1-5 Years">1-5 Years</option>
+                <option value="5-10 Years">5-10 Years</option>
+                <option value="10+ Years">10+ Years</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Parking</label>
+              <select
+                className="w-full border p-2 rounded mt-1 mb-4"
+                value={parking}
+                onChange={(e) => setParking(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="No Parking">No Parking</option>
+                <option value="1 Car">1 Car</option>
+                <option value="2 Car">2 Car</option>
+              </select>
+
+              <label className="block text-sm text-gray-600">Min Area (sqft)</label>
+              <input
+                type="number"
+                className="w-full border p-2 rounded mt-1 mb-4"
+                placeholder="e.g., 800"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+              />
+
+              <button
+                onClick={() => {
+                  resetFilters();
+                  setShowFilters(false);
+                }}
+                className="w-full mt-3 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+              >
+                Reset Filters
+              </button>
+            </aside>
+          </>
+        )}
+
+        {/* DESKTOP FILTER SIDEBAR */}
+        <aside className="w-72 bg-white shadow-lg p-6 rounded-xl h-max sticky top-5 hidden md:block">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Filters</h2>
 
           <div className="mb-5">
@@ -194,53 +361,72 @@ const Buy = () => {
 
           <button
             onClick={resetFilters}
-            className="w-full mt-4 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+            className="w-full mt-3 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
           >
             Reset Filters
           </button>
-        </div>
+        </aside>
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
-          {properties.map((p) => {
-            const firstImage =
-              Array.isArray(p.images) && p.images.length > 0
-                ? p.images[0]
-                : "https://via.placeholder.com/500x300?text=No+Image";
+        <div className="flex-1">
+          <h1 className="text-4xl font-bold mb-10 text-gray-800">
+            Buy Your Dream <span className="text-blue-600">Home</span>
+          </h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+            {properties.map((p) => {
+              const BACKEND_URL = "http://localhost:8000";
+              const images = Array.isArray(p.images)
+                ? p.images.map((img) =>
+                    img.startsWith("http") ? img : `${BACKEND_URL}${img}`
+                  )
+                : [];
+              const firstImage =
+                images.length > 0
+                  ? images[0]
+                  : "https://via.placeholder.com/500x300?text=No+Image";
 
-            return (
-              <div
-                key={p._id}
-                onClick={() => navigate(`/property/${p._id}?from=buy`)}
-                className="rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer bg-white"
-              >
-                <div className="w-full h-56 overflow-hidden rounded-t-xl">
-                  <img
-                    src={firstImage}
-                    alt={p.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
+              return (
+                <div
+                  key={p._id || Math.random()}
+                  onClick={() => p._id && navigate(`/property/${p._id}?from=buy`)}
+                  className="rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer bg-white h-[480px] overflow-hidden flex flex-col"
+                >
+                  <div className="w-full h-60 overflow-hidden rounded-t-xl">
+                    <img
+                      src={firstImage}
+                      alt={p.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded-full">
+                        BUY
+                      </span>
+
+                      <button
+                        onClick={(e) => addToCart(p, e)}
+                        className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+
+                    <h2 className="text-xl font-semibold mt-3 text-gray-900 line-clamp-2">
+                      {p.title || "Untitled Property"}
+                    </h2>
+
+                    <p className="text-gray-600 text-sm mt-1">{p.city || "—"}</p>
+
+                    <p className="text-2xl font-bold mt-3 text-gray-800">
+                      ₹ {p.price?.toLocaleString?.("en-IN") || p.price || "—"}
+                    </p>
+                  </div>
                 </div>
-
-                <div className="p-5">
-                  <span className="text-xs px-3 py-1 bg-blue-100 text-blue-600 rounded-full">
-                    BUY
-                  </span>
-
-                  <h2 className="text-xl font-semibold mt-3 text-gray-900">
-                    {p.title}
-                  </h2>
-
-                  <p className="text-gray-600 text-sm mt-1">{p.city}</p>
-
-                  <p className="text-2xl font-bold mt-3 text-gray-800">
-                    ₹ {p.price.toLocaleString("en-IN")}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-
       </div>
     </div>
   );

@@ -1,8 +1,7 @@
-// src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const CITY_SUGGESTIONS = [
+const DEFAULT_CITY_SUGGESTIONS = [
   "Hyderabad",
   "Bangalore",
   "Mumbai",
@@ -19,176 +18,191 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
 
-  // SEARCH STATES
   const [searchText, setSearchText] = useState("");
-  const [filteredCities, setFilteredCities] = useState([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allSuggestions, setAllSuggestions] = useState([]);
 
   useEffect(() => {
     const savedName = localStorage.getItem("userName");
     if (savedName) setUserName(savedName);
+
+    const fetchSuggestions = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/properties");
+        const data = await res.json();
+
+        const titles = [];
+        const citySet = new Set(DEFAULT_CITY_SUGGESTIONS);
+
+        data.forEach((p) => {
+          if (p.title) titles.push({ type: "title", value: p.title });
+          if (p.city) citySet.add(p.city);
+        });
+
+        const cities = [...citySet].map((c) => ({ type: "city", value: c }));
+        setAllSuggestions([...cities, ...titles]);
+      } catch {
+        setAllSuggestions(
+          DEFAULT_CITY_SUGGESTIONS.map((c) => ({ type: "city", value: c }))
+        );
+      }
+    };
+
+    fetchSuggestions();
   }, []);
 
-  // Handle input typing
+  // INPUT CHANGE
   const handleSearchInput = (e) => {
     const value = e.target.value;
     setSearchText(value);
 
-    if (value.trim() === "") {
-      setFilteredCities([]);
+    if (!value.trim()) {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
-    const matches = CITY_SUGGESTIONS.filter((city) =>
-      city.toLowerCase().includes(value.toLowerCase())
+    const matches = allSuggestions.filter((s) =>
+      s.value.toLowerCase().includes(value.toLowerCase())
     );
 
-    setFilteredCities(matches);
+    setFilteredSuggestions(matches);
     setShowSuggestions(true);
   };
 
-  // Search on clicking suggestion
-  const handleSuggestionClick = (city) => {
-    setSearchText(city);
+  // 🔍 NAVIGATE TO SEARCH PAGE
+  const goToSearch = (query) => {
+    if (!query.trim()) return;
     setShowSuggestions(false);
-    navigate(`/properties?city=${city}`);
+    navigate(`/search?query=${encodeURIComponent(query.trim())}`);
   };
 
-  // Search when pressing Enter
+  // CLICK SUGGESTION
+  const handleSuggestionClick = (sugg) => {
+    setSearchText(sugg.value);
+    goToSearch(sugg.value);
+  };
+
+  // ENTER KEY
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && searchText.trim() !== "") {
-      navigate(`/properties?city=${searchText}`);
-      setShowSuggestions(false);
+    if (e.key === "Enter") {
+      e.preventDefault();
+      goToSearch(searchText);
     }
   };
 
+  // 🔘 SEARCH BUTTON (FIXED)
   const handleSearchButton = () => {
-    if (searchText.trim() !== "") {
-      navigate(`/properties?city=${searchText}`);
-      setShowSuggestions(false);
-    }
+    goToSearch(searchText);
+  };
+
+  const clearSearch = (e) => {
+    e.preventDefault();
+    setSearchText("");
+    setFilteredSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const handleLogout = () => {
+    // Only remove authentication/session keys, NOT cart or other user data
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userId");
     setUserName("");
     navigate("/login");
   };
 
-  // ✅ Check if user is logged in
   const handleProtectedClick = (path) => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    } else {
-      navigate(path);
-    }
+    navigate(token ? path : "/login");
   };
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-8xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
 
-          {/* LOGO */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold text-gray-800">
-              RealEstatePro
-            </Link>
-          </div>
+          <Link to="/" className="text-2xl font-bold text-gray-800">
+            RealEstatePro
+          </Link>
 
-          {/* SEARCHBAR */}
+          {/* SEARCH */}
           <div className="flex-1 mx-6 relative">
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={searchText}
-                onChange={handleSearchInput}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder="Search by city..."
-                className="w-full border border-gray-300 rounded-full px-4 py-2 pr-28 bg-white"
-              />
+            <input
+              value={searchText}
+              onChange={handleSearchInput}
+              onKeyDown={handleKeyDown}
+              placeholder="Search by city or apartment name..."
+              className="w-full border rounded-full px-4 py-2 pr-28"
+            />
 
+            {searchText && (
               <button
-                onClick={handleSearchButton}
-                className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-full"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={clearSearch}
+                className="absolute right-20 top-1/2 -translate-y-1/2 text-gray-500"
               >
-                Search
+                ×
               </button>
-            </div>
+            )}
 
-            {/* AUTO SUGGESTIONS */}
-            {showSuggestions && filteredCities.length > 0 && (
+            <button
+              onClick={handleSearchButton}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-full"
+            >
+              Search
+            </button>
+
+            {showSuggestions && filteredSuggestions.length > 0 && (
               <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-50">
-                {filteredCities.map((city, idx) => (
+                {filteredSuggestions.map((s, i) => (
                   <div
-                    key={idx}
-                    onClick={() => handleSuggestionClick(city)}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                    key={i}
+                    onClick={() => handleSuggestionClick(s)}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between"
                   >
-                    {city}
+                    <span>{s.value}</span>
+                    <span className="text-xs text-gray-400">
+                      {s.type === "city" ? "City" : "Apartment"}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* NO MATCH FOUND */}
-            {showSuggestions && searchText !== "" && filteredCities.length === 0 && (
-              <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg z-50 px-4 py-2 text-gray-500">
-                No results found
-              </div>
-            )}
           </div>
 
-          {/* NAV LINKS */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* NAV */}
+          <div className="hidden md:flex gap-4 items-center">
+            <button onClick={() => handleProtectedClick("/buy")}>Buy</button>
+            <button onClick={() => handleProtectedClick("/rent")}>Rent</button>
+            <button onClick={() => handleProtectedClick("/sell")}>Sell</button>
 
-            <button
-              onClick={() => handleProtectedClick("/buy")}
-              className="text-gray-700 hover:text-blue-600"
-            >
-              Buy
-            </button>
+            <Link to="/cart" className="bg-yellow-400 px-3 py-1 rounded-full">
+              To Cart
+            </Link>
 
-            <button
-              onClick={() => handleProtectedClick("/rent")}
-              className="text-gray-700 hover:text-blue-600"
-            >
-              Rent
-            </button>
-
-            <button
-              onClick={() => handleProtectedClick("/sell")}
-              className="text-gray-700 hover:text-blue-600"
-            >
-              Sell
-            </button>
-
-            {/* AUTH SECTION */}
             {userName ? (
-              <div className="flex items-center space-x-4">
-                <span className="font-semibold text-gray-800">
-                  Hi, {userName}
-                </span>
-
+              <>
+                <span>Hi, {userName}</span>
                 <button
                   onClick={handleLogout}
-                  className="bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-400 transition"
+                  className="bg-red-500 text-white px-4 py-2 rounded-full"
                 >
                   Logout
                 </button>
-              </div>
+              </>
             ) : (
               <Link
                 to="/login"
-                className="bg-blue-600 text-white px-4 py-2 rounded-full font-medium hover:bg-blue-500 transition"
+                className="bg-blue-600 text-white px-4 py-2 rounded-full"
               >
                 Login / Sign-Up
               </Link>
             )}
           </div>
+
         </div>
       </div>
     </nav>

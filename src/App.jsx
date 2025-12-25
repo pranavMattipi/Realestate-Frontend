@@ -1,26 +1,30 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import AboutUs from "./pages/AboutUs";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop"; // ✅ ADD THIS
 
+// PAGES
 import Home from "./pages/Home";
-import Properties from "./pages/Properties";
-import AddProperty from "./pages/AddProperty";
-import Buy from "./pages/Buy";
+import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
+import Properties from "./pages/Properties";
+import Buy from "./pages/Buy";
 import Rent from "./pages/Rent";
 import Sell from "./pages/Sell";
+import AddProperty from "./pages/AddProperty";
 import Individual from "./pages/Individual";
 import Login from "./pages/Login";
-
-import ProtectedRoute from "./components/ProtectedRoute";
+import CartPage from "./pages/CartPage";
+import RecHouse from "./pages/RecHouse";
 
 const App = () => {
   return (
     <Router>
+      <ScrollToTop /> {/* ✅ FIX: always scroll to top on route change */}
+
       <Navbar />
 
       <div className="min-h-screen">
@@ -28,20 +32,18 @@ const App = () => {
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<Home />} />
           <Route path="/properties" element={<Properties />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/property/:id" element={<Individual />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/about" element={<AboutUs />} />
-<Route path="/contact" element={<Contact />} />
+          <Route path="/contact" element={<Contact />} />
+
+          {/* SEARCH */}
+          <Route path="/search" element={<RecHouse />} />
+
+          {/* CART */}
+          <Route path="/cart" element={<CartPage />} />
 
           {/* PROTECTED ROUTES */}
-          <Route
-            path="/sell"
-            element={
-              <ProtectedRoute>
-                <Sell />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/buy"
             element={
@@ -55,6 +57,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Rent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sell"
+            element={
+              <ProtectedRoute>
+                <Sell />
               </ProtectedRoute>
             }
           />

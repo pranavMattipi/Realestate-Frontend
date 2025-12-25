@@ -1,111 +1,119 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../utils/axios";
+import { useNavigate } from "react-router-dom";
 
 const Sell = () => {
-  // Load from localStorage if available
-  const initialProperties =
-    JSON.parse(localStorage.getItem("properties")) || [
-      {
-        title: "",
-        description: "",
-        price: "",
-        type: "sale",
-        bedrooms: "",
-        bathrooms: "",
-        area: "",
-        furnishing: "Unfurnished",
-        propertyAge: "",
-        parking: "",
-        floor: "",
-        totalFloors: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-        images: [],
-        ownerName: "",
-        ownerPhone: "",
-        ownerEmail: "",
-        imagePreviews: [],
-        saved: false,
-        _id: null, // will store backend id after creation
-      },
-    ];
+  const navigate = useNavigate();
+  const [properties, setProperties] = useState([]);
 
-  const [properties, setProperties] = useState(initialProperties);
+  /* ================= USER KEY ================= */
+  const getSellKey = () => {
+    const email =
+      localStorage.getItem("userEmail") ||
+      localStorage.getItem("userName") ||
+      "guest";
+    return `sell_properties_${email}`;
+  };
 
-  // Save to localStorage whenever properties change
+  /* ================= LOAD USER DATA ================= */
   useEffect(() => {
-    localStorage.setItem("properties", JSON.stringify(properties));
-  }, [properties]);
+    const stored = JSON.parse(localStorage.getItem(getSellKey()) || "[]");
+    setProperties(stored);
+  }, []);
 
+  /* ================= PERSIST ================= */
+  const persist = (updated) => {
+    setProperties(updated);
+
+    // ❗ Do not store File objects in localStorage
+    const safe = updated.map((p) => ({
+      ...p,
+      images: [],
+    }));
+
+    localStorage.setItem(getSellKey(), JSON.stringify(safe));
+  };
+
+  /* ================= HANDLE CHANGE ================= */
   const handleChange = (index, e) => {
     const { name, value } = e.target;
     const updated = [...properties];
     updated[index][name] = value;
     if (name === "type") updated[index].price = "";
-    setProperties(updated);
+    persist(updated);
   };
 
+  /* ================= HANDLE IMAGE (ADD MORE) ================= */
   const handleImageChange = (index, e) => {
     const files = Array.from(e.target.files);
-    const urls = files.map((f) => URL.createObjectURL(f));
-    const updated = [...properties];
-    updated[index].images = files;
-    updated[index].imagePreviews = urls;
-    setProperties(updated);
+    const previews = files.map((file) => URL.createObjectURL(file));
+
+    setProperties((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        images: [...(updated[index].images || []), ...files],           // append new files
+        imagePreviews: [...(updated[index].imagePreviews || []), ...previews], // append new previews
+      };
+
+      // Save safe version without File objects
+      const safe = updated.map((p) => ({ ...p, images: [] }));
+      localStorage.setItem(getSellKey(), JSON.stringify(safe));
+      return updated;
+    });
   };
 
-  // Create or Update (uses _id to decide)
+  /* ================= SUBMIT PROPERTY ================= */
   const handleSubmit = async (index) => {
     try {
-      const prop = properties[index];
-      const data = new FormData();
+      const prop = { ...properties[index] };
 
-      // Append all fields (except client-only fields)
+      // Convert numeric fields
+      const numberFields = ["price", "bedrooms", "bathrooms", "area", "floor", "totalFloors"];
+      numberFields.forEach((field) => {
+        if (prop[field] !== "") prop[field] = Number(prop[field]);
+      });
+
+      const formData = new FormData();
       for (const key in prop) {
         if (key === "images") {
-          // append files
-          prop.images.forEach((file) => data.append("images", file));
-        } else if (key !== "imagePreviews" && key !== "saved" && key !== "_id") {
-          // append other primitive fields
-          data.append(key, prop[key] ?? "");
+          prop.images?.forEach((f) => formData.append("images", f));
+        } else if (!["_id", "imagePreviews", "saved"].includes(key)) {
+          formData.append(key, prop[key] ?? "");
         }
       }
 
       let res;
       if (prop._id) {
-        // UPDATE existing property
-        res = await axios.put(
-          `http://localhost:8000/api/properties/${prop._id}`,
-          data,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
+        res = await API.put(`/properties/${prop._id}`, formData);
       } else {
-        // CREATE new property
-        res = await axios.post("http://localhost:8000/api/properties", data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        res = await API.post("/properties", formData);
       }
 
       const updated = [...properties];
-      updated[index].saved = true;
-      updated[index]._id = res.data._id || res.data._id; // ensure id saved
-      // if backend returned whole object, ensure image previews updated accordingly (optional)
-      setProperties(updated);
+      updated[index] = {
+        ...updated[index],
+        ...res.data,
+        imagePreviews: res.data.images
+          ? res.data.images.map((img) =>
+              img.startsWith("http") ? img : `${API.defaults.baseURL}${img}`
+            )
+          : updated[index].imagePreviews,
+        saved: true,
+      };
 
-      alert("Property saved successfully!");
+      persist(updated);
+      alert("Property saved successfully");
     } catch (err) {
       console.error(err);
-      alert("Error saving property. See console.");
+      alert("Failed to save property");
     }
   };
 
+  /* ================= ADD / EDIT / DELETE ================= */
   const addNewProperty = () => {
-    setProperties((prev) => [
-      ...prev,
+    persist([
+      ...properties,
       {
         title: "",
         description: "",
@@ -123,13 +131,12 @@ const Sell = () => {
         city: "",
         state: "",
         pincode: "",
-        images: [],
         ownerName: "",
         ownerPhone: "",
         ownerEmail: "",
+        images: [],
         imagePreviews: [],
         saved: false,
-        _id: null,
       },
     ]);
   };
@@ -137,35 +144,26 @@ const Sell = () => {
   const editProperty = (index) => {
     const updated = [...properties];
     updated[index].saved = false;
-    setProperties(updated);
+    persist(updated);
   };
 
-  // DELETE: remove from backend if _id exists, then remove locally
   const deleteProperty = async (index) => {
+    if (!window.confirm("Delete this property?")) return;
+
     try {
       const prop = properties[index];
-
-      const confirm = window.confirm(
-        "Are you sure you want to delete this property?"
-      );
-      if (!confirm) return;
-
-      // If property exists on backend, delete by id
       if (prop._id) {
-        await axios.delete(`http://localhost:8000/api/properties/${prop._id}`);
+        await API.delete(`/properties/${prop._id}`);
       }
-
-      // Remove locally
-      const updated = properties.filter((_, i) => i !== index);
-      setProperties(updated);
-
-      alert("Property deleted.");
+      persist(properties.filter((_, i) => i !== index));
+      alert("Property deleted");
     } catch (err) {
       console.error(err);
-      alert("Delete failed. See console for details.");
+      alert("Delete failed");
     }
   };
 
+  /* ================= UI ================= */
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-10">
       <h1 className="text-3xl font-bold mb-6">Sell Your Property</h1>
@@ -177,34 +175,28 @@ const Sell = () => {
           </h2>
 
           <input
-            type="text"
             name="title"
-            placeholder="Title"
             value={property.title}
             onChange={(e) => handleChange(index, e)}
-            className="border p-2 rounded w-full"
-            required
+            placeholder="Title"
+            className="border p-2 w-full rounded"
           />
 
           <textarea
             name="description"
-            placeholder="Description"
             value={property.description}
             onChange={(e) => handleChange(index, e)}
-            className="border p-2 rounded w-full"
+            placeholder="Description"
+            className="border p-2 w-full rounded"
           />
 
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="number"
               name="price"
-              placeholder={
-                property.type === "rent" ? "Rent per month" : "Price"
-              }
               value={property.price}
               onChange={(e) => handleChange(index, e)}
+              placeholder={property.type === "rent" ? "Rent per month" : "Price"}
               className="border p-2 rounded"
-              required
             />
             <select
               name="type"
@@ -219,27 +211,24 @@ const Sell = () => {
 
           <div className="grid grid-cols-3 gap-4">
             <input
-              type="number"
               name="bedrooms"
-              placeholder="Bedrooms"
               value={property.bedrooms}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Bedrooms"
               className="border p-2 rounded"
             />
             <input
-              type="number"
               name="bathrooms"
-              placeholder="Bathrooms"
               value={property.bathrooms}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Bathrooms"
               className="border p-2 rounded"
             />
             <input
-              type="number"
               name="area"
-              placeholder="Area (sq ft)"
               value={property.area}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Area (sq ft)"
               className="border p-2 rounded"
             />
           </div>
@@ -256,154 +245,146 @@ const Sell = () => {
               <option value="Unfurnished">Unfurnished</option>
             </select>
             <input
-              type="text"
               name="propertyAge"
-              placeholder="Property Age"
               value={property.propertyAge}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Property Age"
               className="border p-2 rounded"
             />
             <input
-              type="text"
               name="parking"
-              placeholder="Parking"
               value={property.parking}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Parking"
               className="border p-2 rounded"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="text"
               name="floor"
-              placeholder="Floor"
               value={property.floor}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Floor"
               className="border p-2 rounded"
             />
             <input
-              type="number"
               name="totalFloors"
-              placeholder="Total Floors"
               value={property.totalFloors}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Total Floors"
               className="border p-2 rounded"
             />
           </div>
 
-          <div>
-            <input
-              type="text"
-              name="address"
-              placeholder="Address"
-              value={property.address}
-              onChange={(e) => handleChange(index, e)}
-              className="w-full border p-2 rounded"
-            />
-          </div>
+          <input
+            name="address"
+            value={property.address}
+            onChange={(e) => handleChange(index, e)}
+            placeholder="Address"
+            className="border p-2 w-full rounded"
+          />
 
           <div className="grid grid-cols-3 gap-4">
             <input
-              type="text"
               name="city"
-              placeholder="City"
               value={property.city}
               onChange={(e) => handleChange(index, e)}
+              placeholder="City"
               className="border p-2 rounded"
             />
             <input
-              type="text"
               name="state"
-              placeholder="State"
               value={property.state}
               onChange={(e) => handleChange(index, e)}
+              placeholder="State"
               className="border p-2 rounded"
             />
             <input
-              type="text"
               name="pincode"
-              placeholder="Pincode"
               value={property.pincode}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Pincode"
               className="border p-2 rounded"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <input
-              type="text"
               name="ownerName"
-              placeholder="Owner Name"
               value={property.ownerName}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Owner Name"
               className="border p-2 rounded"
             />
             <input
-              type="tel"
               name="ownerPhone"
-              placeholder="Owner Phone"
               value={property.ownerPhone}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Owner Phone"
               className="border p-2 rounded"
             />
             <input
-              type="email"
               name="ownerEmail"
-              placeholder="Owner Email"
               value={property.ownerEmail}
               onChange={(e) => handleChange(index, e)}
+              placeholder="Owner Email"
               className="border p-2 rounded"
             />
           </div>
 
-          {/* Images */}
-          <div>
-            <input
-              type="file"
-              multiple
-              onChange={(e) => handleImageChange(index, e)}
-              className="border p-2 rounded"
-              disabled={property.saved}
-            />
-            <div className="flex flex-wrap gap-2 mt-2">
-              {property.imagePreviews.map((src, idx) => (
-                <img
-                  key={idx}
-                  src={src}
-                  alt={`preview-${idx}`}
-                  className="w-24 h-24 object-cover rounded"
-                />
-              ))}
-            </div>
+          {/* ================= IMAGE UPLOAD ================= */}
+          <input
+            type="file"
+            multiple
+            disabled={property.saved}
+            onChange={(e) => handleImageChange(index, e)}
+          />
+
+          {/* ================= PREVIEWS (show backend images after submit, previews before) ================= */}
+          <div className="flex gap-2 flex-wrap">
+            {property.saved && property.images && property.images.length > 0
+              ? property.images.map((img, i) => {
+                  const BACKEND_URL = "http://localhost:8000";
+                  const url = img.startsWith("http") ? img : `${BACKEND_URL}${img}`;
+                  return (
+                    <img
+                      key={i}
+                      src={url}
+                      alt=""
+                      className="w-24 h-24 object-cover rounded"
+                    />
+                  );
+                })
+              : property.imagePreviews?.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt=""
+                    className="w-24 h-24 object-cover rounded"
+                  />
+                ))}
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-4">
-            {!property.saved && (
+            {!property.saved ? (
               <button
-                type="button"
                 onClick={() => handleSubmit(index)}
-                className="px-6 py-2 font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
+                className="bg-blue-600 text-white px-6 py-2 rounded"
               >
                 Submit Property
               </button>
-            )}
-
-            {property.saved && (
+            ) : (
               <>
                 <button
-                  type="button"
                   onClick={() => editProperty(index)}
-                  className="px-6 py-2 font-semibold rounded bg-yellow-500 text-white hover:bg-yellow-600"
+                  className="bg-yellow-500 text-white px-6 py-2 rounded"
                 >
                   Edit
                 </button>
-
                 <button
-                  type="button"
                   onClick={() => deleteProperty(index)}
-                  className="px-6 py-2 font-semibold rounded bg-red-600 text-white hover:bg-red-700"
+                  className="bg-red-600 text-white px-6 py-2 rounded"
                 >
                   Delete
                 </button>
@@ -414,9 +395,8 @@ const Sell = () => {
       ))}
 
       <button
-        type="button"
         onClick={addNewProperty}
-        className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-300"
+        className="bg-green-600 text-white px-6 py-3 rounded"
       >
         Add Another Property
       </button>

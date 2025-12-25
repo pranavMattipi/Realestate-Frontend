@@ -23,23 +23,32 @@ const AddProperty = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:8000/api/properties", form);
-      alert("Property added!");
-      setForm({
-        title: "",
-        description: "",
-        price: "",
-        type: "sale",
-        bedrooms: "",
-        bathrooms: "",
-        area: "",
-        address: "",
-        city: "",
-        images: "",
-      });
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("price", form.price);
+      formData.append("type", form.type);
+      formData.append("bedrooms", form.bedrooms);
+      formData.append("bathrooms", form.bathrooms);
+      formData.append("area", form.area);
+      formData.append("address", form.address);
+      formData.append("city", form.city);
+      formData.append("images", form.images);
+
+      const res = await axios.post(
+        "http://localhost:8000/api/properties",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      const created = res.data;
+      if (!created || !created._id) {
+        console.error("Create response did not include _id:", created);
+        throw new Error("Server response missing created property id");
+      }
     } catch (err) {
-      console.error(err);
-      alert("Error adding property");
+      console.error("Upload failed:", err.response?.data || err.message || err);
+      alert("Upload failed: " + (err.response?.data?.message || err.message));
     }
   };
 
