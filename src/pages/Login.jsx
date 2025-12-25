@@ -1,7 +1,7 @@
 // src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import API from "../utils/axios"; // <-- use your axios instance
 
 import headerImg1 from "../assets/pexels-lkloeppel-466685.jpg";
 import headerImg2 from "../assets/pexels-peng-liu-45946-169647.jpg";
@@ -42,7 +42,7 @@ const Login = () => {
           return alert("Passwords do not match");
         }
 
-        await axios.post("http://${import.meta.env.VITE_API_BASE_URL}/api/auth/register", {
+        await API.post("/auth/register", {
           name: form.name,
           email: form.email,
           password: form.password,
@@ -51,7 +51,7 @@ const Login = () => {
         alert("Account created! Please login.");
         setIsSignup(false);
       } else {
-        const res = await axios.post("http://${import.meta.env.VITE_API_BASE_URL}/api/auth/login", {
+        const res = await API.post("/auth/login", {
           email: form.email,
           password: form.password,
         });
