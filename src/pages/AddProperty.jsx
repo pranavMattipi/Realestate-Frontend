@@ -36,7 +36,7 @@ const AddProperty = () => {
       formData.append("images", form.images);
 
       const res = await axios.post(
-        "http://localhost:8000/api/properties",
+        "http://${import.meta.env.VITE_API_BASE_URL}/api/properties",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

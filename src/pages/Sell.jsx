@@ -345,7 +345,7 @@ const Sell = () => {
           <div className="flex gap-2 flex-wrap">
             {property.saved && property.images && property.images.length > 0
               ? property.images.map((img, i) => {
-                  const BACKEND_URL = "http://localhost:8000";
+                  const BACKEND_URL = "http://${import.meta.env.VITE_API_BASE_URL}";
                   const url = img.startsWith("http") ? img : `${BACKEND_URL}${img}`;
                   return (
                     <img

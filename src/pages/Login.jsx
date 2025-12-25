@@ -42,7 +42,7 @@ const Login = () => {
           return alert("Passwords do not match");
         }
 
-        await axios.post("http://localhost:8000/api/auth/register", {
+        await axios.post("http://${import.meta.env.VITE_API_BASE_URL}/api/auth/register", {
           name: form.name,
           email: form.email,
           password: form.password,
@@ -51,7 +51,7 @@ const Login = () => {
         alert("Account created! Please login.");
         setIsSignup(false);
       } else {
-        const res = await axios.post("http://localhost:8000/api/auth/login", {
+        const res = await axios.post("http://${import.meta.env.VITE_API_BASE_URL}/api/auth/login", {
           email: form.email,
           password: form.password,
         });

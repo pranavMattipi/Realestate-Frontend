@@ -14,6 +14,8 @@ const DEFAULT_CITY_SUGGESTIONS = [
   "Ahmedabad",
 ];
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Navbar = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
@@ -29,7 +31,7 @@ const Navbar = () => {
 
     const fetchSuggestions = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/properties");
+        const res = await fetch(`${BACKEND_URL}/api/properties`);
         const data = await res.json();
 
         const titles = [];
@@ -123,7 +125,6 @@ const Navbar = () => {
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-8xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-
           <Link to="/" className="text-2xl font-bold text-gray-800">
             RealEstatePro
           </Link>
@@ -202,7 +203,6 @@ const Navbar = () => {
               </Link>
             )}
           </div>
-
         </div>
       </div>
     </nav>

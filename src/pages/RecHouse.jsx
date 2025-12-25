@@ -19,7 +19,7 @@ const RecHouse = () => {
 
   const fetchSearchedProperties = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/properties");
+      const res = await axios.get("http://${import.meta.env.VITE_API_BASE_URL}/api/properties");
       let results = res.data || [];
 
       const q = searchQuery.toLowerCase().trim();

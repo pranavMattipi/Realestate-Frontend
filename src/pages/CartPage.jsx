@@ -24,7 +24,7 @@ const CartPage = () => {
 
       const checks = await Promise.allSettled(
         stored.map((item) =>
-          axios.get(`http://localhost:8000/api/properties/${item._id}`)
+          axios.get(`http://${import.meta.env.VITE_API_BASE_URL}/api/properties/${item._id}`)
         )
       );
 

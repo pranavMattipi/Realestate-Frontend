@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "http://${import.meta.env.VITE_API_BASE_URL}";
 
 const Individual = () => {
   const { id } = useParams();
