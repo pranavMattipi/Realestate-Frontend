@@ -19,6 +19,7 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
 const Navbar = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false); // ✅ added
 
   const [searchText, setSearchText] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
@@ -54,7 +55,6 @@ const Navbar = () => {
     fetchSuggestions();
   }, []);
 
-  // INPUT CHANGE
   const handleSearchInput = (e) => {
     const value = e.target.value;
     setSearchText(value);
@@ -73,20 +73,18 @@ const Navbar = () => {
     setShowSuggestions(true);
   };
 
-  // 🔍 NAVIGATE TO SEARCH PAGE
   const goToSearch = (query) => {
     if (!query.trim()) return;
     setShowSuggestions(false);
+    setMenuOpen(false);
     navigate(`/search?query=${encodeURIComponent(query.trim())}`);
   };
 
-  // CLICK SUGGESTION
   const handleSuggestionClick = (sugg) => {
     setSearchText(sugg.value);
     goToSearch(sugg.value);
   };
 
-  // ENTER KEY
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -94,7 +92,6 @@ const Navbar = () => {
     }
   };
 
-  // 🔘 SEARCH BUTTON (FIXED)
   const handleSearchButton = () => {
     goToSearch(searchText);
   };
@@ -107,17 +104,18 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    // Only remove authentication/session keys, NOT cart or other user data
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userId");
     setUserName("");
+    setMenuOpen(false);
     navigate("/login");
   };
 
   const handleProtectedClick = (path) => {
     const token = localStorage.getItem("token");
+    setMenuOpen(false);
     navigate(token ? path : "/login");
   };
 
@@ -130,7 +128,7 @@ const Navbar = () => {
           </Link>
 
           {/* SEARCH */}
-          <div className="flex-1 mx-6 relative">
+          <div className="hidden md:flex flex-1 mx-6 relative">
             <input
               value={searchText}
               onChange={handleSearchInput}
@@ -174,7 +172,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* NAV */}
+          {/* DESKTOP NAV */}
           <div className="hidden md:flex gap-4 items-center">
             <button onClick={() => handleProtectedClick("/buy")}>Buy</button>
             <button onClick={() => handleProtectedClick("/rent")}>Rent</button>
@@ -203,7 +201,53 @@ const Navbar = () => {
               </Link>
             )}
           </div>
+
+          {/* 🍔 HAMBURGER */}
+          <button
+            className="md:hidden text-2xl"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            ☰
+          </button>
         </div>
+
+        {/* 📱 MOBILE MENU */}
+        {menuOpen && (
+          <div className="md:hidden bg-white border-t py-4 space-y-4">
+            <button onClick={() => handleProtectedClick("/buy")} className="block w-full text-left px-4">
+              Buy
+            </button>
+            <button onClick={() => handleProtectedClick("/rent")} className="block w-full text-left px-4">
+              Rent
+            </button>
+            <button onClick={() => handleProtectedClick("/sell")} className="block w-full text-left px-4">
+              Sell
+            </button>
+
+            <Link to="/cart" className="block px-4">
+              To Cart
+            </Link>
+
+            {userName ? (
+              <>
+                <div className="px-4">Hi, {userName}</div>
+                <button
+                  onClick={handleLogout}
+                  className="mx-4 bg-red-500 text-white px-4 py-2 rounded-full"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="mx-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-full"
+              >
+                Login / Sign-Up
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
