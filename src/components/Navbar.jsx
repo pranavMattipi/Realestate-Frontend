@@ -19,7 +19,7 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
 const Navbar = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false); // ✅ added
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [searchText, setSearchText] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
@@ -214,17 +214,31 @@ const Navbar = () => {
         {/* 📱 MOBILE MENU */}
         {menuOpen && (
           <div className="md:hidden bg-white border-t py-4 space-y-4">
-            <button onClick={() => handleProtectedClick("/buy")} className="block w-full text-left px-4">
+            <button
+              onClick={() => handleProtectedClick("/buy")}
+              className="block w-full text-left px-4"
+            >
               Buy
             </button>
-            <button onClick={() => handleProtectedClick("/rent")} className="block w-full text-left px-4">
+            <button
+              onClick={() => handleProtectedClick("/rent")}
+              className="block w-full text-left px-4"
+            >
               Rent
             </button>
-            <button onClick={() => handleProtectedClick("/sell")} className="block w-full text-left px-4">
+            <button
+              onClick={() => handleProtectedClick("/sell")}
+              className="block w-full text-left px-4"
+            >
               Sell
             </button>
 
-            <Link to="/cart" className="block px-4">
+            {/* ✅ FIX HERE */}
+            <Link
+              to="/cart"
+              onClick={() => setMenuOpen(false)}
+              className="block px-4"
+            >
               To Cart
             </Link>
 
@@ -241,6 +255,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/login"
+                onClick={() => setMenuOpen(false)}
                 className="mx-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-full"
               >
                 Login / Sign-Up
