@@ -153,9 +153,17 @@ const Sell = () => {
     try {
       const prop = properties[index];
       if (prop._id) {
-        await API.delete(`/properties/${prop._id}`);
+        // Try to delete from backend, but ignore errors (property might already be gone)
+        try {
+          await API.delete(`/properties/${prop._id}`);
+        } catch (err) {
+          // Optionally log: property might already be deleted in DB
+          console.warn("Backend property already deleted or not found.");
+        }
       }
-      persist(properties.filter((_, i) => i !== index));
+      // Always remove from local state and localStorage
+      const updated = properties.filter((_, i) => i !== index);
+      persist(updated);
       alert("Property deleted");
     } catch (err) {
       console.error(err);
